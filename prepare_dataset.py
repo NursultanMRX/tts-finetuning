@@ -25,14 +25,22 @@ def main():
     print("Audiolarni 16kHz ga o'tkazish va tekshirish...")
 
     for _, row in tqdm(df.iterrows(), total=len(df)):
-        # wavs/ prefiksini saqlash - ljspeech formatter uchun kerak
-        file_path = row['file_name']  # "wavs/audio001.wav" saqlanadi
-        if not file_path.startswith("wavs/"):
-            file_path = "wavs/" + file_path
+        # Fayl nomini tozalash - barcha prefixlarni olib tashlash
+        file_name = row['file_name']
+
+        # wavs/ prefixini olib tashlash (agar bor bo'lsa)
+        file_name = file_name.replace("wavs/", "")
+
+        # Agar .wav.wav bo'lsa, bittasini olib tashlash
+        if file_name.endswith(".wav.wav"):
+            file_name = file_name[:-4]  # Oxirgi .wav ni olib tashlash
+
+        # .wav kengaytmasini tekshirish
+        if not file_name.endswith(".wav"):
+            file_name += ".wav"
 
         # To'liq yo'l faylni o'qish uchun
-        file_name_only = file_path.replace("wavs/", "")
-        full_wav_path = os.path.join(wavs_dir, file_name_only)
+        full_wav_path = os.path.join(wavs_dir, file_name)
 
         if os.path.exists(full_wav_path):
             # Audio davomiyligini tekshirish (Memory safety)
@@ -48,7 +56,7 @@ def main():
                 audio_16k = librosa.resample(audio, orig_sr=sr, target_sr=TARGET_SR)
                 sf.write(full_wav_path, audio_16k, TARGET_SR)
 
-            formatted_lines.append(f"wavs/{file_name_only}|speaker1|{row['text']}")
+            formatted_lines.append(f"wavs/{file_name}|speaker1|{row['text']}")
 
     # 3. train.txt yaratish
     with open(os.path.join(LOCAL_DIR, "train.txt"), "w", encoding="utf-8") as f:
