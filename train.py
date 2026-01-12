@@ -71,8 +71,25 @@ def train():
 
     # 6. TEXT ENCODERNI MUZLATISH (Harflarni unutmasligi uchun)
     print("Freeze Text Encoder: ACTIVE")
-    for param in model.enc_p.parameters():
-        param.requires_grad = False
+
+    # Text encoder turli nomlar bilan bo'lishi mumkin
+    text_encoder_names = ['enc_p', 'text_encoder', 'encoder', 'encoder_text']
+    frozen = False
+
+    for encoder_name in text_encoder_names:
+        if hasattr(model, encoder_name):
+            encoder = getattr(model, encoder_name)
+            for param in encoder.parameters():
+                param.requires_grad = False
+            print(f"  -> {encoder_name} muzlatildi")
+            frozen = True
+            break
+
+    if not frozen:
+        print("  -> OGOHLANTIRISH: Text encoder topilmadi!")
+        print("  -> Mavjud modullar:")
+        for name, _ in model.named_children():
+            print(f"       - {name}")
 
     # 7. Trainer ishga tushadi
     trainer = Trainer(
