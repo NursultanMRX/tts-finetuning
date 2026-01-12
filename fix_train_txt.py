@@ -37,21 +37,21 @@ for i, line in enumerate(lines, 1):
     # Dublikatlarni tuzatish
     # 1. wavs/wavs/ -> wavs/
     if "wavs/wavs/" in file_path:
-        file_path = file_path.replace("wavs/wavs/", "wavs/")
+        file_path = file_path.replace("wavs/wavs/", "")
         errors_found += 1
-        print(f"Tuzatildi (qator {i}): wavs/wavs/ -> wavs/")
+        print(f"Tuzatildi (qator {i}): wavs/wavs/ -> [fayl nomi]")
 
-    # 2. .wav.wav -> .wav
+    # 2. wavs/ prefiksini OLIB TASHLASH (formatter o'zi qo'shadi!)
+    if file_path.startswith("wavs/"):
+        file_path = file_path.replace("wavs/", "", 1)
+        errors_found += 1
+        print(f"Tuzatildi (qator {i}): wavs/ prefiksi olib tashlandi")
+
+    # 3. .wav.wav -> .wav
     if file_path.endswith(".wav.wav"):
         file_path = file_path[:-4]  # Oxirgi .wav ni olib tashlash
         errors_found += 1
         print(f"Tuzatildi (qator {i}): .wav.wav -> .wav")
-
-    # 3. wavs/ prefiksi borligini tekshirish
-    if not file_path.startswith("wavs/"):
-        file_path = "wavs/" + file_path
-        errors_found += 1
-        print(f"Tuzatildi (qator {i}): wavs/ prefiksi qo'shildi")
 
     # 4. .wav kengaytmasi borligini tekshirish
     if not file_path.endswith(".wav"):
@@ -94,6 +94,7 @@ with open(TRAIN_FILE, "r", encoding="utf-8") as f:
 
     wavs_wavs_count = content.count("wavs/wavs/")
     wav_wav_count = content.count(".wav.wav")
+    wavs_prefix_count = content.count("\nwavs/") + (1 if content.startswith("wavs/") else 0)
 
     if wavs_wavs_count > 0:
         print(f"✗ XATO: Hali ham {wavs_wavs_count} ta 'wavs/wavs/' topildi!")
@@ -104,6 +105,12 @@ with open(TRAIN_FILE, "r", encoding="utf-8") as f:
         print(f"✗ XATO: Hali ham {wav_wav_count} ta '.wav.wav' topildi!")
     else:
         print("✓ OK: '.wav.wav' dublikatlari yo'q")
+
+    if wavs_prefix_count > 0:
+        print(f"✗ XATO: Hali ham {wavs_prefix_count} ta 'wavs/' prefiksi bor!")
+        print("   (ljspeech formatter o'zi qo'shadi, shuning uchun olib tashlash kerak)")
+    else:
+        print("✓ OK: 'wavs/' prefikslari yo'q (to'g'ri!)")
 
 print("\n" + "=" * 60)
 print("Birinchi 5 qator:")
