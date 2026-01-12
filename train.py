@@ -4,7 +4,7 @@ import torch
 from trainer import Trainer, TrainerArgs
 from TTS.tts.configs.shared_configs import BaseDatasetConfig
 from TTS.tts.configs.vits_config import VitsConfig
-from TTS.tts.models.vits import Vits, VitsArgs
+from TTS.tts.models.vits import Vits
 from TTS.utils.audio import AudioProcessor
 from TTS.tts.utils.text.tokenizer import TTSTokenizer
 from TTS.tts.datasets import load_tts_samples
@@ -38,22 +38,9 @@ def train():
         mel_fmax=None
     )
 
-    # 3. MODEL ARGUMENTLARI (TypeError ni yo'qotish uchun)
-    # hidden_channels va boshqalar FAQAT shu yerda yoziladi
-    model_args = VitsArgs(
-        use_sdp=False,
-        use_speaker_embedding=False,
-        hidden_channels=192,
-        inter_channels=192,
-        filter_channels=768,
-        n_heads=2,
-        n_layers=6
-    )
-
-    # 4. ASOSIY CONFIG
+    # 3. ASOSIY CONFIG (model parametrlari bilan)
     config = VitsConfig(
         audio=audio_config,
-        model_args=model_args, # Arxitektura shu yerga yuklandi
         run_name="mms_kaa_finetune",
         batch_size=16, # 25s audio uchun 3090 da 16 xavfsiz
         eval_batch_size=4,
@@ -69,29 +56,33 @@ def train():
         output_path=OUTPUT_PATH,
         datasets=[dataset_config],
         save_step=1000,
+        # Model arxitektura parametrlari (to'g'ridan-to'g'ri)
+        use_sdp=False,
+        use_speaker_embedding=False,
+        hidden_channels=192,
     )
 
-    # 5. Lug'atni yuklash (Dimension mismatch bo'lmasligi uchun)
+    # 4. Lug'atni yuklash (Dimension mismatch bo'lmasligi uchun)
     with open(VOCAB_FILE, "r", encoding="utf-8") as f:
         chars = [line.strip() for line in f.readlines()]
     config.characters = chars
 
-    # 6. Modelni yaratish
+    # 5. Modelni yaratish
     ap = AudioProcessor.init_from_config(config)
     tokenizer, config = TTSTokenizer.init_from_config(config)
 
     model = Vits(config, ap, tokenizer, speaker_manager=None)
 
-    # 7. MMS og'irliklarini yuklash
+    # 6. MMS og'irliklarini yuklash
     print("MMS Checkpoint yuklanmoqda...")
     model.load_checkpoint(config, MMS_CKPT, strict=False)
 
-    # 8. TEXT ENCODERNI MUZLATISH (Harflarni unutmasligi uchun)
+    # 7. TEXT ENCODERNI MUZLATISH (Harflarni unutmasligi uchun)
     print("Freeze Text Encoder: ACTIVE")
     for param in model.enc_p.parameters():
         param.requires_grad = False
 
-    # 9. Trainer ishga tushadi
+    # 8. Trainer ishga tushadi
     trainer = Trainer(
         TrainerArgs(),
         config,
