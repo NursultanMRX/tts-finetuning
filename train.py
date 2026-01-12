@@ -52,7 +52,7 @@ def train():
         with open(vocab_json_path, 'r', encoding='utf-8') as f:
             vocab_dict = json.load(f)
 
-        # Index bo'yicha sort qilish
+        # Index bo'yicha sort qilish - MUHIM: Checkpoint bilan mos kelishi kerak!
         vocab_sorted = sorted(vocab_dict.items(), key=lambda x: x[1])
         vocab_chars = [char for char, _ in vocab_sorted]
         vocab_string = ''.join(vocab_chars)
@@ -65,37 +65,48 @@ def train():
         if len(found_chars) < len(karakalpak_test):
             missing = [c for c in karakalpak_test if c not in vocab_string]
             print(f"  -> YO'Q: {missing}")
+
+        # CharactersConfig yaratish - vocab dictionary'dan to'g'ridan-to'g'ri
+        # MUHIM: is_unique=False va is_sorted=False qilish, vocab tartibini saqlash uchun
+        characters_config = CharactersConfig(
+            characters_class=None,  # Default class ishlatish
+            characters=vocab_string,
+            punctuations="",  # Bo'sh - barcha belgilar characters'da
+            pad=vocab_dict.get("_", None),  # Agar _ mavjud bo'lsa
+            eos=None,
+            bos=None,
+            blank=None,
+            is_unique=False,  # Takrorlanishni tekshirmaslik
+            is_sorted=False   # Tartibni o'zgartirmaslik
+        )
+        print(f"  -> CharactersConfig yaratildi: {len(vocab_string)} belgi")
     else:
         print(f"  -> XATO: {vocab_json_path} topilmadi!")
         print("  -> Iltimos, avval 'python download_hf_model.py' ishga tushiring")
         exit(1)
+        characters_config = None
 
     # 4. ASOSIY CONFIG (checkpoint bilan mos vocabulary)
-    config_kwargs = {
-        'audio': audio_config,
-        'run_name': "mms_kaa_finetune",
-        'batch_size': 16,  # 25s audio uchun 3090 da 16 xavfsiz
-        'eval_batch_size': 4,
-        'batch_group_size': 0,
-        'num_loader_workers': 2,
-        'num_eval_loader_workers': 2,
-        'run_eval': True,
-        'epochs': 1000,
-        'text_cleaner': "basic_cleaners",
-        'use_phonemes': False,
-        'phoneme_language': None,
-        'compute_input_seq_cache': False,  # Cache'ni o'chirish
-        'mixed_precision': True,
-        'output_path': OUTPUT_PATH,
-        'datasets': [dataset_config],
-        'save_step': 1000,
-    }
-
-    # Agar vocabulary mavjud bo'lsa, qo'shamiz
-    if vocab_string:
-        config_kwargs['characters'] = vocab_string
-
-    config = VitsConfig(**config_kwargs)
+    config = VitsConfig(
+        audio=audio_config,
+        run_name="mms_kaa_finetune",
+        batch_size=16,  # 25s audio uchun 3090 da 16 xavfsiz
+        eval_batch_size=4,
+        batch_group_size=0,
+        num_loader_workers=2,
+        num_eval_loader_workers=2,
+        run_eval=True,
+        epochs=1000,
+        text_cleaner="basic_cleaners",
+        use_phonemes=False,
+        phoneme_language=None,
+        characters=characters_config,  # CharactersConfig obyekti
+        compute_input_seq_cache=False,  # Cache'ni o'chirish
+        mixed_precision=True,
+        output_path=OUTPUT_PATH,
+        datasets=[dataset_config],
+        save_step=1000,
+    )
 
     # 4. Modelni yaratish
     ap = AudioProcessor.init_from_config(config)
