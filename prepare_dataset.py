@@ -48,7 +48,7 @@ def main():
             duration = len(audio) / sr
 
             if duration > 25.0:
-                print(f"Skipping {file_path}: Too long ({duration:.2f}s)")
+                print(f"Skipping {file_name}: Too long ({duration:.2f}s)")
                 continue
 
             # 16kHz ga o'tkazish
