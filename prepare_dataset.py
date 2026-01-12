@@ -48,7 +48,7 @@ def main():
                 audio_16k = librosa.resample(audio, orig_sr=sr, target_sr=TARGET_SR)
                 sf.write(full_wav_path, audio_16k, TARGET_SR)
 
-            formatted_lines.append(f"{file_path}|{row['text']}")
+            formatted_lines.append(f"wavs/{file_name_only}|speaker1|{row['text']}")
 
     # 3. train.txt yaratish
     with open(os.path.join(LOCAL_DIR, "train.txt"), "w", encoding="utf-8") as f:
