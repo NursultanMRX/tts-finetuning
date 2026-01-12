@@ -66,17 +66,24 @@ def train():
             missing = [c for c in karakalpak_test if c not in vocab_string]
             print(f"  -> YO'Q: {missing}")
 
-        # CharactersConfig yaratish - vocab dictionary'dan to'g'ridan-to'g'ri
-        # MUHIM: is_unique=False va is_sorted=False qilish, vocab tartibini saqlash uchun
+        # CharactersConfig yaratish - MUHIM: Qo'shimcha tokenlar QO'SHMASLIK!
+        # Checkpoint 47 ta token kutadi (0-46), shuning uchun 47 ta token yaratish kerak
+        # Pad tokeni allaqachon vocab'da mavjud (odatda index 0 dagi '_')
+
+        # Pad tokenni topish (odatda '_' yoki birinchi belgi)
+        pad_char = "_" if "_" in vocab_string else vocab_chars[0]
+
+        print(f"  -> Pad token: '{pad_char}' (index: {vocab_dict.get(pad_char, 'unknown')})")
+
         characters_config = CharactersConfig(
-            characters_class=None,  # Default class ishlatish
-            characters=vocab_string,
-            punctuations="",  # Bo'sh - barcha belgilar characters'da
-            pad=vocab_dict.get("_", None),  # Agar _ mavjud bo'lsa
-            eos=None,
-            bos=None,
-            blank=None,
-            is_unique=False,  # Takrorlanishni tekshirmaslik
+            characters_class=None,  # Default class
+            characters=vocab_string,  # 47 ta belgi
+            punctuations="",  # Bo'sh - barcha tinish belgilari allaqachon characters'da
+            pad=pad_char,  # PAD BELGISI (index emas!)
+            eos=None,  # Qo'shimcha EOS qo'shmaslik
+            bos=None,  # Qo'shimcha BOS qo'shmaslik
+            blank=None,  # Qo'shimcha BLANK qo'shmaslik
+            is_unique=True,  # Takrorlanishni tekshirish
             is_sorted=False   # Tartibni o'zgartirmaslik
         )
         print(f"  -> CharactersConfig yaratildi: {len(vocab_string)} belgi")
