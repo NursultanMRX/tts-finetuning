@@ -55,15 +55,13 @@ def train():
         # Index bo'yicha sort qilish - MUHIM: Checkpoint bilan mos kelishi kerak!
         vocab_sorted = sorted(vocab_dict.items(), key=lambda x: x[1])
         
-        # '|' (blank/pad) ni ajratib olish - Coqui o'zi qo'shadi
-        # Shuning uchun characters dan olib tashlaymiz
-        blank_char = '|'
-        vocab_chars_without_blank = [char for char, _ in vocab_sorted if char != blank_char]
-        vocab_string = ''.join(vocab_chars_without_blank)
+        # BARCHA 47 ta harfni qo'shamiz (blank/pad ham)
+        # Coqui hech qanday qo'shimcha token qo'shmasligi uchun pad=None, blank=None
+        vocab_chars = [char for char, _ in vocab_sorted]
+        vocab_string = ''.join(vocab_chars)
         
         print(f"  -> {len(vocab_dict)} ta harf MMS modelidan yuklandi")
-        print(f"  -> Characters (blank/pad siz): {len(vocab_chars_without_blank)}")
-        print(f"  -> Blank/Pad token: '{blank_char}' (index {vocab_dict.get(blank_char, 'N/A')})")
+        print(f"  -> Vocab string length: {len(vocab_string)}")
 
         # Karakalpak harflarini tekshirish
         karakalpak_test = ['ғ', 'қ', 'ң', 'ү', 'ҳ', 'ә', 'ө', 'ў']
@@ -74,21 +72,20 @@ def train():
             print(f"  -> YO'Q: {missing}")
         
         # CharactersConfig yaratish
-        # MUHIM: Coqui blank va pad ni alohida qo'shadi!
-        # vocab_string da 46 ta harf (blank siz), blank qo'shilganda 47 bo'ladi
-        # PAD va BLANK bir xil bo'lishi kerak ('|'), aks holda Coqui yangi pad token yaratadi
+        # MUHIM: pad=None, blank=None - Coqui hech narsa qo'shmasin!
+        # Barcha 47 ta harf vocab_string da, indekslar to'g'ridan-to'g'ri
         characters_config = CharactersConfig(
-            characters_class=None,  # Default class ishlatish
-            characters=vocab_string,  # 46 ta harf (blank siz)
-            punctuations="",  # Bo'sh
-            pad=blank_char,   # '|' - PAD ham BLANK bilan bir xil!
+            characters_class=None,
+            characters=vocab_string,  # Barcha 47 ta harf
+            punctuations="",
+            pad=None,    # Coqui qo'shimcha token qo'shmasin
             eos=None,
             bos=None,
-            blank=blank_char, # '|' - MMS blank token (index 0)
+            blank=None,  # Coqui qo'shimcha token qo'shmasin
             is_unique=False,
             is_sorted=False
         )
-        print(f"  -> CharactersConfig: {len(vocab_string)} chars + 1 blank/pad = {len(vocab_string)+1} total")
+        print(f"  -> CharactersConfig: {len(vocab_string)} chars (pad/blank none)")
     else:
         print(f"  -> XATO: {vocab_json_path} topilmadi!")
         print("  -> Iltimos, avval 'python download_hf_model.py' ishga tushiring")
