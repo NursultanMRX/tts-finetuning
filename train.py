@@ -21,10 +21,11 @@ VOCAB_FILE = "mms_kaa/vocab.txt"
 
 def train():
     # 1. Dataset konfiguratsiyasi
+    # train.txt fayli DATASET_PATH da, wavs papkasi esa uning ichida
     dataset_config = BaseDatasetConfig(
         formatter="ljspeech",
         meta_file_train="train.txt",
-        path=os.path.join(DATASET_PATH, "wavs")
+        path=DATASET_PATH  # "./my_dataset" - train.txt shu yerda
     )
 
     # 2. Audio konfiguratsiyasi (16kHz MMS standarti)

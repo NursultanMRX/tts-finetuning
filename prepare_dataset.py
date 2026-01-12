@@ -25,8 +25,14 @@ def main():
     print("Audiolarni 16kHz ga o'tkazish va tekshirish...")
 
     for _, row in tqdm(df.iterrows(), total=len(df)):
-        file_path = row['file_name'].replace("wavs/", "")
-        full_wav_path = os.path.join(wavs_dir, file_path)
+        # wavs/ prefiksini saqlash - ljspeech formatter uchun kerak
+        file_path = row['file_name']  # "wavs/audio001.wav" saqlanadi
+        if not file_path.startswith("wavs/"):
+            file_path = "wavs/" + file_path
+
+        # To'liq yo'l faylni o'qish uchun
+        file_name_only = file_path.replace("wavs/", "")
+        full_wav_path = os.path.join(wavs_dir, file_name_only)
 
         if os.path.exists(full_wav_path):
             # Audio davomiyligini tekshirish (Memory safety)
