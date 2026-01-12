@@ -159,16 +159,23 @@ def train():
                 print(f"  -> Tokenizer characters turi: {type(tokenizer.characters)}")
 
                 if tokenizer_vocab_size != vocab_size_in_ckpt:
-                    print(f"  -> XATO: Vocabulary o'lchami mos kelmaydi!")
+                    print(f"  -> OGOHLANTIRISH: Vocabulary o'lchami mos kelmaydi!")
                     print(f"  ->   Checkpoint: {vocab_size_in_ckpt}")
                     print(f"  ->   Tokenizer:  {tokenizer_vocab_size}")
-                    print(f"  -> Config parametrlar:")
-                    print(f"  ->   add_blank={config.add_blank if hasattr(config, 'add_blank') else 'N/A'}")
-                    if hasattr(tokenizer.characters, 'blank'):
-                        print(f"  ->   blank token: '{tokenizer.characters.blank}'")
-                    if hasattr(tokenizer.characters, 'pad'):
-                        print(f"  ->   pad token: '{tokenizer.characters.pad}'")
-                    exit(1)
+                    
+                    # Embedding ni resize qilish
+                    if tokenizer_vocab_size > vocab_size_in_ckpt:
+                        print(f"  -> Embedding resize qilinmoqda: {vocab_size_in_ckpt} -> {tokenizer_vocab_size}")
+                        old_emb = state_dict[key]
+                        new_emb = torch.zeros(tokenizer_vocab_size, emb_shape[1])
+                        new_emb[:vocab_size_in_ckpt] = old_emb  # Eski og'irliklarni saqlash
+                        # Yangi tokenlar uchun kichik random qiymatlar
+                        new_emb[vocab_size_in_ckpt:] = torch.randn(tokenizer_vocab_size - vocab_size_in_ckpt, emb_shape[1]) * 0.01
+                        state_dict[key] = new_emb
+                        print(f"  -> Embedding resized: {new_emb.shape}")
+                    else:
+                        print(f"  -> Tokenizer kichikroq, checkpoint dan kesib olinadi")
+                        state_dict[key] = state_dict[key][:tokenizer_vocab_size]
             break
 
     # Checkpoint yuklanishi
