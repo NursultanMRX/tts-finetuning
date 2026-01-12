@@ -53,7 +53,7 @@ def train():
         text_cleaner="basic_cleaners",
         use_phonemes=False,
         phoneme_language=None,
-        compute_input_seq_cache=True,
+        compute_input_seq_cache=False,  # Cache'ni o'chirish (fayl yo'llari yangilandi)
         mixed_precision=True,
         output_path=OUTPUT_PATH,
         datasets=[dataset_config],
