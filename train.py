@@ -67,15 +67,21 @@ def train():
             print(f"  -> YO'Q: {missing}")
 
         # CharactersConfig yaratish - vocab dictionary'dan to'g'ridan-to'g'ri
-        # MUHIM: is_unique=False va is_sorted=False qilish, vocab tartibini saqlash uchun
+        # MUHIM: MMS modelida '|' (index 0) blank/pad token sifatida ishlatiladi
+        # Buni to'g'ri belgilash kerak, aks holda Coqui o'z tokenini qo'shadi!
+        
+        # '|' tokenini olish (MMS da index 0 da)
+        blank_char = '|' if '|' in vocab_dict else None
+        print(f"  -> Blank/Pad token: '{blank_char}' (index {vocab_dict.get(blank_char, 'N/A')})")
+        
         characters_config = CharactersConfig(
             characters_class=None,  # Default class ishlatish
             characters=vocab_string,
             punctuations="",  # Bo'sh - barcha belgilar characters'da
-            pad=vocab_dict.get("_", None),  # Agar _ mavjud bo'lsa
+            pad=blank_char,   # '|' - MMS pad token (index 0)
             eos=None,
             bos=None,
-            blank=None,
+            blank=blank_char, # '|' - MMS blank token (index 0)
             is_unique=False,  # Takrorlanishni tekshirmaslik
             is_sorted=False   # Tartibni o'zgartirmaslik
         )
