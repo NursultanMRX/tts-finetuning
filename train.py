@@ -43,7 +43,12 @@ def train():
     with open(MMS_CONFIG, 'r', encoding='utf-8') as f:
         mms_config = json.load(f)
 
-    # 4. ASOSIY CONFIG (MMS konfiguratsiyasidan foydalangan holda)
+    # 4. Lug'atni yuklash (Dimension mismatch bo'lmasligi uchun)
+    with open(VOCAB_FILE, "r", encoding="utf-8") as f:
+        chars = [line.strip() for line in f.readlines() if line.strip()]
+    characters_str = ''.join(chars)
+
+    # 5. ASOSIY CONFIG (MMS konfiguratsiyasidan foydalangan holda)
     config = VitsConfig(
         audio=audio_config,
         run_name="mms_kaa_finetune",
@@ -56,17 +61,14 @@ def train():
         epochs=1000,
         text_cleaner="basic_cleaners",
         use_phonemes=False,
+        phoneme_language=None,
+        characters=characters_str,  # String sifatida
         compute_input_seq_cache=True,
         mixed_precision=True,
         output_path=OUTPUT_PATH,
         datasets=[dataset_config],
         save_step=1000,
     )
-
-    # 5. Lug'atni yuklash (Dimension mismatch bo'lmasligi uchun)
-    with open(VOCAB_FILE, "r", encoding="utf-8") as f:
-        chars = [line.strip() for line in f.readlines()]
-    config.characters = chars
 
     # 6. Modelni yaratish
     ap = AudioProcessor.init_from_config(config)
