@@ -40,15 +40,18 @@ def train():
         mel_fmax=None
     )
 
-    # 3. MMS Config'dan vocabulary'ni yuklash
+    # 3. MMS vocabulary'ni yuklash (vocab.json dan)
     import json
-    print(f"MMS Config yuklanmoqda: {MMS_CONFIG}")
-    with open(MMS_CONFIG, 'r', encoding='utf-8') as f:
-        mms_config = json.load(f)
+    import os
 
-    # MMS modelining o'z vocabulary'sini olish
-    if 'vocab' in mms_config:
-        vocab_dict = mms_config['vocab']
+    vocab_json_path = os.path.join(os.path.dirname(MMS_CONFIG), "vocab.json")
+    print(f"MMS Vocabulary yuklanmoqda: {vocab_json_path}")
+
+    vocab_string = None
+    if os.path.exists(vocab_json_path):
+        with open(vocab_json_path, 'r', encoding='utf-8') as f:
+            vocab_dict = json.load(f)
+
         # Index bo'yicha sort qilish
         vocab_sorted = sorted(vocab_dict.items(), key=lambda x: x[1])
         vocab_chars = [char for char, _ in vocab_sorted]
@@ -63,8 +66,9 @@ def train():
             missing = [c for c in karakalpak_test if c not in vocab_string]
             print(f"  -> YO'Q: {missing}")
     else:
-        print("  -> OGOHLANTIRISH: Config'da 'vocab' topilmadi, default vocabulary ishlatiladi")
-        vocab_string = None
+        print(f"  -> XATO: {vocab_json_path} topilmadi!")
+        print("  -> Iltimos, avval 'python download_hf_model.py' ishga tushiring")
+        exit(1)
 
     # 4. ASOSIY CONFIG (checkpoint bilan mos vocabulary)
     config_kwargs = {
