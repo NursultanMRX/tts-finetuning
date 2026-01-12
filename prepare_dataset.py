@@ -29,18 +29,21 @@ def main():
         file_name = row['file_name']
 
         # wavs/ prefixini olib tashlash (agar bor bo'lsa)
-        file_name = file_name.replace("wavs/", "")
+        file_name = row['file_name'].replace("wavs/", "")
 
         # Agar .wav.wav bo'lsa, bittasini olib tashlash
         if file_name.endswith(".wav.wav"):
             file_name = file_name[:-4]  # Oxirgi .wav ni olib tashlash
 
-        # .wav kengaytmasini tekshirish
+        # .wav kengaytmasini ta'minlash (faylni o'qish uchun)
         if not file_name.endswith(".wav"):
             file_name += ".wav"
 
         # To'liq yo'l faylni o'qish uchun
         full_wav_path = os.path.join(wavs_dir, file_name)
+
+        # train.txt uchun fayl nomi (.wav SIZ - ljspeech formatter o'zi qo'shadi!)
+        file_name_for_train = file_name[:-4]  # .wav ni olib tashlash
 
         if os.path.exists(full_wav_path):
             # Audio davomiyligini tekshirish (Memory safety)
@@ -56,8 +59,8 @@ def main():
                 audio_16k = librosa.resample(audio, orig_sr=sr, target_sr=TARGET_SR)
                 sf.write(full_wav_path, audio_16k, TARGET_SR)
 
-            # MUHIM: wavs/ prefiksini QOSHMASLIK - ljspeech formatter o'zi qo'shadi!
-            formatted_lines.append(f"{file_name}|speaker1|{row['text']}")
+            # MUHIM: wavs/ va .wav qo'shmaslik - ljspeech formatter o'zi qo'shadi!
+            formatted_lines.append(f"{file_name_for_train}|speaker1|{row['text']}")
 
     # 3. train.txt yaratish
     with open(os.path.join(LOCAL_DIR, "train.txt"), "w", encoding="utf-8") as f:
