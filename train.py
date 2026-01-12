@@ -38,17 +38,7 @@ def train():
         mel_fmax=None
     )
 
-    # 3. MMS config.json ni yuklash (model arxitekturasi uchun)
-    import json
-    with open(MMS_CONFIG, 'r', encoding='utf-8') as f:
-        mms_config = json.load(f)
-
-    # 4. Lug'atni yuklash (Dimension mismatch bo'lmasligi uchun)
-    with open(VOCAB_FILE, "r", encoding="utf-8") as f:
-        chars = [line.strip() for line in f.readlines() if line.strip()]
-    characters_str = ''.join(chars)
-
-    # 5. ASOSIY CONFIG (MMS konfiguratsiyasidan foydalangan holda)
+    # 3. ASOSIY CONFIG (sodda versiya - lug'at checkpoint dan yuklanadi)
     config = VitsConfig(
         audio=audio_config,
         run_name="mms_kaa_finetune",
@@ -62,7 +52,6 @@ def train():
         text_cleaner="basic_cleaners",
         use_phonemes=False,
         phoneme_language=None,
-        characters=characters_str,  # String sifatida
         compute_input_seq_cache=True,
         mixed_precision=True,
         output_path=OUTPUT_PATH,
@@ -70,22 +59,22 @@ def train():
         save_step=1000,
     )
 
-    # 6. Modelni yaratish
+    # 4. Modelni yaratish
     ap = AudioProcessor.init_from_config(config)
     tokenizer, config = TTSTokenizer.init_from_config(config)
 
     model = Vits(config, ap, tokenizer, speaker_manager=None)
 
-    # 7. MMS og'irliklarini yuklash
+    # 5. MMS og'irliklarini yuklash
     print("MMS Checkpoint yuklanmoqda...")
     model.load_checkpoint(config, MMS_CKPT, strict=False)
 
-    # 8. TEXT ENCODERNI MUZLATISH (Harflarni unutmasligi uchun)
+    # 6. TEXT ENCODERNI MUZLATISH (Harflarni unutmasligi uchun)
     print("Freeze Text Encoder: ACTIVE")
     for param in model.enc_p.parameters():
         param.requires_grad = False
 
-    # 9. Trainer ishga tushadi
+    # 7. Trainer ishga tushadi
     trainer = Trainer(
         TrainerArgs(),
         config,
