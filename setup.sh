@@ -1,7 +1,7 @@
 #!/bin/bash
 # =====================================================
 # MMS-TTS Karakalpak Fine-tuning Setup Script
-# For Vast.ai environment with NVIDIA RTX 3090/4090
+# For Vast.ai with PyTorch Template
 # =====================================================
 
 set -e  # Exit on any error
@@ -11,16 +11,27 @@ echo "   MMS-TTS Karakalpak Fine-tuning Setup"
 echo "==========================================="
 
 # -----------------------------------------------------
-# 1. System Update
+# 0. Check Python Version
 # -----------------------------------------------------
-echo "[1/5] Updating system packages..."
-apt-get update -y
-apt-get upgrade -y
+echo ""
+echo "[0/6] Checking Python version..."
+python3 --version
+
+# Check if we're in the base conda environment or need venv
+if command -v conda &> /dev/null; then
+    echo "✓ Conda detected, using conda environment"
+    USE_VENV=false
+else
+    echo "✓ Using Python venv"
+    USE_VENV=true
+fi
 
 # -----------------------------------------------------
-# 2. Install System Dependencies
+# 1. System Update & Dependencies
 # -----------------------------------------------------
-echo "[2/5] Installing system dependencies..."
+echo ""
+echo "[1/6] Installing system dependencies..."
+apt-get update -y
 apt-get install -y \
     libsndfile1 \
     libsndfile1-dev \
@@ -29,87 +40,142 @@ apt-get install -y \
     git \
     ffmpeg \
     wget \
-    tar \
     build-essential
 
-# Verify espeak-ng installation
-echo "Verifying espeak-ng installation..."
-espeak-ng --version
+# Verify espeak-ng
+espeak-ng --version || echo "Warning: espeak-ng not fully installed"
+
+# -----------------------------------------------------
+# 2. Create Virtual Environment (if needed)
+# -----------------------------------------------------
+echo ""
+echo "[2/6] Setting up Python environment..."
+
+if [ "$USE_VENV" = true ]; then
+    # Create virtual environment with python3
+    python3 -m venv venv_tts
+    source venv_tts/bin/activate
+    echo "✓ Virtual environment created: venv_tts"
+    echo "✓ Activated: $(which python)"
+else
+    echo "✓ Using existing conda/system Python"
+fi
+
+# Upgrade pip
+python3 -m pip install --upgrade pip
 
 # -----------------------------------------------------
 # 3. Install Python Requirements
 # -----------------------------------------------------
-echo "[3/5] Installing Python requirements..."
-pip install --upgrade pip
-pip install -r requirements.txt
+echo ""
+echo "[3/6] Installing Python packages..."
 
-# Optional: Install specific PyTorch version for CUDA 11.8
-# Uncomment if needed:
-# pip install torch==2.1.0+cu118 torchaudio==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
+# Install core packages
+python3 -m pip install --upgrade \
+    numpy \
+    scipy \
+    librosa \
+    soundfile \
+    pandas \
+    tqdm \
+    tensorboard
+
+# Install Coqui TTS
+python3 -m pip install TTS
+
+# Install HuggingFace Hub
+python3 -m pip install huggingface_hub
+
+# Verify torch (should be pre-installed in PyTorch template)
+python3 -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
 
 # -----------------------------------------------------
-# 4. Download MMS Karakalpak Checkpoint
+# 4. Download MMS Model from HuggingFace
 # -----------------------------------------------------
-echo "[4/5] Downloading MMS Karakalpak checkpoint..."
+echo ""
+echo "[4/6] Downloading MMS model from HuggingFace..."
 
-# Create directory for MMS model
-mkdir -p mms_kaa
-
-# Download the official Facebook MMS checkpoint for Karakalpak (kaa)
-MMS_URL="https://dl.fbaipublicfiles.com/mms/tts/kaa.tar.gz"
-CHECKPOINT_FILE="kaa.tar.gz"
-
-echo "Downloading from: ${MMS_URL}"
-wget -O ${CHECKPOINT_FILE} ${MMS_URL}
-
-# Extract the checkpoint
-echo "Extracting checkpoint..."
-tar -xzf ${CHECKPOINT_FILE} -C mms_kaa
-
-# Clean up the tar file
-rm ${CHECKPOINT_FILE}
-
-# List extracted files
-echo "Extracted files in mms_kaa/:"
-ls -la mms_kaa/
+python3 download_hf_model.py
 
 # -----------------------------------------------------
 # 5. Verify Installation
 # -----------------------------------------------------
-echo "[5/5] Verifying installation..."
+echo ""
+echo "[5/6] Verifying installation..."
 
-# Check Python packages
-python -c "import TTS; print(f'TTS version: {TTS.__version__}')"
-python -c "import torch; print(f'PyTorch version: {torch.__version__}')"
-python -c "import torch; print(f'CUDA available: {torch.cuda.is_available()}')"
-python -c "import torch; print(f'GPU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"N/A\"}')"
-python -c "import librosa; print(f'Librosa version: {librosa.__version__}')"
-python -c "import pandas; print(f'Pandas version: {pandas.__version__}')"
+python3 << 'EOF'
+import sys
+print(f"Python: {sys.version}")
 
-# Check for checkpoint files
-if [ -f "mms_kaa/G_100000.pth" ]; then
-    echo "✓ Generator checkpoint found: mms_kaa/G_100000.pth"
-elif [ -f "mms_kaa/G_50000.pth" ]; then
-    echo "✓ Generator checkpoint found: mms_kaa/G_50000.pth"
+import torch
+print(f"PyTorch: {torch.__version__}")
+print(f"CUDA available: {torch.cuda.is_available()}")
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+    print(f"VRAM: {torch.cuda.get_device_properties(0).total_memory / 1024**3:.1f} GB")
+
+import TTS
+print(f"Coqui TTS: {TTS.__version__}")
+
+import librosa
+print(f"Librosa: {librosa.__version__}")
+
+import os
+if os.path.exists("mms_kaa_hf/vocab.json"):
+    import json
+    with open("mms_kaa_hf/vocab.json") as f:
+        vocab = json.load(f)
+    print(f"MMS Vocabulary: {len(vocab)} characters")
+EOF
+
+# -----------------------------------------------------
+# 6. Check MMS Model Files
+# -----------------------------------------------------
+echo ""
+echo "[6/6] Checking MMS model files..."
+
+if [ -f "mms_kaa_hf/pytorch_model.bin" ]; then
+    echo "✓ Model weights: mms_kaa_hf/pytorch_model.bin"
 else
-    echo "⚠ Searching for generator checkpoint..."
-    find mms_kaa -name "G_*.pth" -o -name "*.pth"
+    echo "✗ Model weights not found!"
 fi
 
-if [ -f "mms_kaa/config.json" ]; then
-    echo "✓ Config file found: mms_kaa/config.json"
+if [ -f "mms_kaa_hf/config.json" ]; then
+    echo "✓ Config: mms_kaa_hf/config.json"
+else
+    echo "✗ Config not found!"
 fi
 
-if [ -f "mms_kaa/vocab.txt" ]; then
-    echo "✓ Vocab file found: mms_kaa/vocab.txt"
+if [ -f "mms_kaa_hf/vocab.json" ]; then
+    echo "✓ Vocabulary: mms_kaa_hf/vocab.json"
+else
+    echo "✗ Vocabulary not found!"
 fi
 
+# -----------------------------------------------------
+# Done!
+# -----------------------------------------------------
 echo ""
 echo "==========================================="
-echo "   Setup Complete!"
+echo "   ✅ Setup Complete!"
 echo "==========================================="
 echo ""
 echo "Next steps:"
-echo "  1. Run: python prepare_dataset.py"
-echo "  2. Run: python train.py"
+echo ""
+if [ "$USE_VENV" = true ]; then
+    echo "  1. Activate environment:"
+    echo "     source venv_tts/bin/activate"
+    echo ""
+fi
+echo "  2. Edit prepare_dataset.py with your HuggingFace token:"
+echo "     nano prepare_dataset.py"
+echo ""
+echo "  3. Download and prepare your dataset:"
+echo "     python3 prepare_dataset.py"
+echo ""
+echo "  4. Clean vocabulary (IMPORTANT!):"
+echo "     python3 quick_fix_vocab.py"
+echo ""
+echo "  5. Start training:"
+echo "     python3 train.py"
 echo ""

@@ -12,13 +12,14 @@ Fine-tune Facebook's **MMS-TTS (Massively Multilingual Speech)** model for Karak
 2. [Key Features](#-key-features)
 3. [Repository Structure](#-repository-structure)
 4. [Prerequisites](#-prerequisites)
-5. [Quick Start Guide](#-quick-start-guide)
-6. [Detailed Setup](#-detailed-setup)
-7. [Dataset Format](#-dataset-format)
-8. [Training Configuration](#️-training-configuration)
-9. [Troubleshooting](#-troubleshooting)
-10. [Using the Fine-tuned Model](#-using-the-fine-tuned-model)
-11. [License](#-license)
+5. [Vast.ai Setup](#️-vastai-setup)
+6. [Quick Start Guide](#-quick-start-guide)
+7. [Detailed Setup](#-detailed-setup)
+8. [Dataset Format](#-dataset-format)
+9. [Training Configuration](#️-training-configuration)
+10. [Troubleshooting](#-troubleshooting)
+11. [Using the Fine-tuned Model](#-using-the-fine-tuned-model)
+12. [License](#-license)
 
 ---
 
@@ -89,7 +90,64 @@ tts-finetuning/
 
 ---
 
-## 🚀 Quick Start Guide
+## �️ Vast.ai Setup
+
+### ⚠️ IMPORTANT: Choose the Correct Template!
+
+**❌ DO NOT use old templates like:**
+```
+nvidia/cuda:10.0-cudnn7-devel-ubuntu16.04  # TOO OLD!
+pytorch 1.0                                  # TOO OLD!
+```
+
+**✅ USE this template:**
+
+| Setting | Recommended Value |
+|---------|-------------------|
+| **Docker Image** | `pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel` |
+| **CUDA** | 11.8+ |
+| **PyTorch** | 2.0+ |
+| **Python** | 3.10+ |
+| **GPU** | RTX 3090, 4090, A40, A100 (24GB+ VRAM) |
+| **Disk** | 50GB+ |
+
+### How to Select Template on Vast.ai:
+
+1. Go to [Vast.ai Console](https://cloud.vast.ai/)
+2. Click **"Create Instance"**
+3. In **Template** section, select **"PyTorch"**
+4. Choose version: **`pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel`**
+5. Or use **Custom Docker Image**: `pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel`
+
+### Alternative Docker Images:
+
+```bash
+# Option 1: Official PyTorch (Recommended)
+pytorch/pytorch:2.1.0-cuda11.8-cudnn8-devel
+
+# Option 2: NVIDIA NGC PyTorch
+nvcr.io/nvidia/pytorch:23.10-py3
+
+# Option 3: Latest PyTorch
+pytorch/pytorch:2.2.0-cuda12.1-cudnn8-devel
+```
+
+### After Starting Instance:
+
+```bash
+# Verify CUDA version (should be 11.8+)
+nvcc --version
+
+# Verify PyTorch version (should be 2.0+)
+python -c "import torch; print(torch.__version__)"
+
+# Verify GPU is detected
+python -c "import torch; print(torch.cuda.is_available())"
+```
+
+---
+
+## �🚀 Quick Start Guide
 
 For experienced users, here's the TL;DR:
 
