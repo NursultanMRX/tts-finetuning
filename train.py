@@ -76,18 +76,19 @@ def train():
         # CharactersConfig yaratish
         # MUHIM: Coqui blank va pad ni alohida qo'shadi!
         # vocab_string da 46 ta harf (blank siz), blank qo'shilganda 47 bo'ladi
+        # PAD va BLANK bir xil bo'lishi kerak ('|'), aks holda Coqui yangi pad token yaratadi
         characters_config = CharactersConfig(
             characters_class=None,  # Default class ishlatish
             characters=vocab_string,  # 46 ta harf (blank siz)
             punctuations="",  # Bo'sh
-            pad=None,         # Pad ishlatmaymiz (blank yetarli)
+            pad=blank_char,   # '|' - PAD ham BLANK bilan bir xil!
             eos=None,
             bos=None,
             blank=blank_char, # '|' - MMS blank token (index 0)
             is_unique=False,
             is_sorted=False
         )
-        print(f"  -> CharactersConfig: {len(vocab_string)} chars + 1 blank = {len(vocab_string)+1} total")
+        print(f"  -> CharactersConfig: {len(vocab_string)} chars + 1 blank/pad = {len(vocab_string)+1} total")
     else:
         print(f"  -> XATO: {vocab_json_path} topilmadi!")
         print("  -> Iltimos, avval 'python download_hf_model.py' ishga tushiring")
