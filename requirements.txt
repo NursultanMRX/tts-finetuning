@@ -1,28 +1,6 @@
-# =====================================================
-# MMS-TTS Fine-tuning Dependencies
-# Compatible with Python 3.9/3.10
-# =====================================================
-
-# Core TTS Library - Coqui TTS
-TTS>=0.22.0
-
-# Hugging Face Hub for dataset download
-huggingface_hub>=0.20.0
-
-# Data processing
-pandas>=2.0.0
-
-# Audio processing
-librosa>=0.10.0
-soundfile>=0.12.0
-scipy>=1.10.0
-
-# PyTorch (CUDA 11.8 compatible)
-# Note: Install torch separately if needed for specific CUDA version
-# pip install torch==2.1.0+cu118 torchaudio==2.1.0+cu118 --index-url https://download.pytorch.org/whl/cu118
-torch>=2.0.0
-torchaudio>=2.0.0
-
-# Additional utilities
-numpy>=1.24.0
-tqdm>=4.65.0
+TTS==0.22.0
+trainer
+pandas
+librosa
+huggingface_hub
+scipy
