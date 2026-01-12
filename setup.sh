@@ -11,28 +11,34 @@ echo "   MMS-TTS Karakalpak Fine-tuning Setup"
 echo "==========================================="
 
 # -----------------------------------------------------
-# 0. Check Python Version
+# 1. Install Python 3.10 venv
 # -----------------------------------------------------
 echo ""
-echo "[0/6] Checking Python version..."
-python3 --version
-
-# Check if we're in the base conda environment or need venv
-if command -v conda &> /dev/null; then
-    echo "✓ Conda detected, using conda environment"
-    USE_VENV=false
-else
-    echo "✓ Using Python venv"
-    USE_VENV=true
-fi
+echo "[1/6] Installing python3.10-venv..."
+apt update -y
+apt install python3.10-venv -y
 
 # -----------------------------------------------------
-# 1. System Update & Dependencies
+# 2. Create Virtual Environment
 # -----------------------------------------------------
 echo ""
-echo "[1/6] Installing system dependencies..."
-apt-get update -y
-apt-get install -y \
+echo "[2/6] Creating virtual environment with Python 3.10..."
+python3.10 -m venv venv_tts
+source venv_tts/bin/activate
+
+echo "✓ Virtual environment created: venv_tts"
+echo "✓ Python: $(python --version)"
+echo "✓ Path: $(which python)"
+
+# Upgrade pip
+pip install --upgrade pip
+
+# -----------------------------------------------------
+# 3. Install System Dependencies
+# -----------------------------------------------------
+echo ""
+echo "[3/6] Installing system dependencies..."
+apt install -y \
     libsndfile1 \
     libsndfile1-dev \
     espeak-ng \
@@ -42,68 +48,42 @@ apt-get install -y \
     wget \
     build-essential
 
-# Verify espeak-ng
-espeak-ng --version || echo "Warning: espeak-ng not fully installed"
-
 # -----------------------------------------------------
-# 2. Create Virtual Environment (if needed)
+# 4. Install Python Packages
 # -----------------------------------------------------
 echo ""
-echo "[2/6] Setting up Python environment..."
+echo "[4/6] Installing Python packages..."
 
-if [ "$USE_VENV" = true ]; then
-    # Create virtual environment with python3
-    python3 -m venv venv_tts
-    source venv_tts/bin/activate
-    echo "✓ Virtual environment created: venv_tts"
-    echo "✓ Activated: $(which python)"
-else
-    echo "✓ Using existing conda/system Python"
-fi
+# Core packages
+pip install pandas librosa soundfile tqdm numpy scipy tensorboard
 
-# Upgrade pip
-python3 -m pip install --upgrade pip
+# HuggingFace Hub
+pip install huggingface_hub
+
+# Coqui TTS (case sensitive!)
+pip install TTS
+
+# Verify installations
+echo ""
+echo "Verifying installations..."
+python -c "import torch; print(f'PyTorch: {torch.__version__}')"
+python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
+python -c "import TTS; print(f'Coqui TTS: {TTS.__version__}')"
 
 # -----------------------------------------------------
-# 3. Install Python Requirements
+# 5. Download MMS Model from HuggingFace
 # -----------------------------------------------------
 echo ""
-echo "[3/6] Installing Python packages..."
-
-# Install core packages
-python3 -m pip install --upgrade \
-    numpy \
-    scipy \
-    librosa \
-    soundfile \
-    pandas \
-    tqdm \
-    tensorboard
-
-# Install Coqui TTS
-python3 -m pip install TTS
-
-# Install HuggingFace Hub
-python3 -m pip install huggingface_hub
-
-# Verify torch (should be pre-installed in PyTorch template)
-python3 -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')"
+echo "[5/6] Downloading MMS Karakalpak model from HuggingFace..."
+python download_hf_model.py
 
 # -----------------------------------------------------
-# 4. Download MMS Model from HuggingFace
+# 6. Verify Setup
 # -----------------------------------------------------
 echo ""
-echo "[4/6] Downloading MMS model from HuggingFace..."
+echo "[6/6] Final verification..."
 
-python3 download_hf_model.py
-
-# -----------------------------------------------------
-# 5. Verify Installation
-# -----------------------------------------------------
-echo ""
-echo "[5/6] Verifying installation..."
-
-python3 << 'EOF'
+python << 'EOF'
 import sys
 print(f"Python: {sys.version}")
 
@@ -117,39 +97,26 @@ if torch.cuda.is_available():
 import TTS
 print(f"Coqui TTS: {TTS.__version__}")
 
-import librosa
-print(f"Librosa: {librosa.__version__}")
-
 import os
 if os.path.exists("mms_kaa_hf/vocab.json"):
     import json
     with open("mms_kaa_hf/vocab.json") as f:
         vocab = json.load(f)
-    print(f"MMS Vocabulary: {len(vocab)} characters")
+    print(f"MMS Vocabulary: {len(vocab)} characters ✓")
+else:
+    print("⚠️  MMS model not downloaded yet")
 EOF
 
-# -----------------------------------------------------
-# 6. Check MMS Model Files
-# -----------------------------------------------------
+# Check model files
 echo ""
-echo "[6/6] Checking MMS model files..."
-
 if [ -f "mms_kaa_hf/pytorch_model.bin" ]; then
-    echo "✓ Model weights: mms_kaa_hf/pytorch_model.bin"
-else
-    echo "✗ Model weights not found!"
+    echo "✓ Model: mms_kaa_hf/pytorch_model.bin"
 fi
-
 if [ -f "mms_kaa_hf/config.json" ]; then
     echo "✓ Config: mms_kaa_hf/config.json"
-else
-    echo "✗ Config not found!"
 fi
-
 if [ -f "mms_kaa_hf/vocab.json" ]; then
-    echo "✓ Vocabulary: mms_kaa_hf/vocab.json"
-else
-    echo "✗ Vocabulary not found!"
+    echo "✓ Vocab: mms_kaa_hf/vocab.json (47 chars)"
 fi
 
 # -----------------------------------------------------
@@ -160,22 +127,12 @@ echo "==========================================="
 echo "   ✅ Setup Complete!"
 echo "==========================================="
 echo ""
+echo "IMPORTANT: Activate environment before each session:"
+echo "  source venv_tts/bin/activate"
+echo ""
 echo "Next steps:"
-echo ""
-if [ "$USE_VENV" = true ]; then
-    echo "  1. Activate environment:"
-    echo "     source venv_tts/bin/activate"
-    echo ""
-fi
-echo "  2. Edit prepare_dataset.py with your HuggingFace token:"
-echo "     nano prepare_dataset.py"
-echo ""
-echo "  3. Download and prepare your dataset:"
-echo "     python3 prepare_dataset.py"
-echo ""
-echo "  4. Clean vocabulary (IMPORTANT!):"
-echo "     python3 quick_fix_vocab.py"
-echo ""
-echo "  5. Start training:"
-echo "     python3 train.py"
+echo "  1. Edit prepare_dataset.py with your HuggingFace token"
+echo "  2. python prepare_dataset.py"
+echo "  3. python quick_fix_vocab.py  # CRITICAL: fixes punctuation"
+echo "  4. python train.py"
 echo ""
