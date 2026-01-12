@@ -122,12 +122,39 @@ def train():
     # TTS library format: {'model': state_dict}
     if "model" in checkpoint:
         # TTS format
-        model.load_state_dict(checkpoint["model"], strict=False)
-        print("  -> TTS format checkpoint yuklandi")
+        state_dict = checkpoint["model"]
+        print("  -> TTS format checkpoint")
     else:
         # HuggingFace format - to'g'ridan-to'g'ri state_dict
-        model.load_state_dict(checkpoint, strict=False)
-        print("  -> HuggingFace format checkpoint yuklandi")
+        state_dict = checkpoint
+        print("  -> HuggingFace format checkpoint")
+
+    # Embedding layer hajmini tekshirish
+    for key in state_dict.keys():
+        if 'emb' in key.lower() and 'weight' in key:
+            emb_shape = state_dict[key].shape
+            print(f"  -> Checkpoint embedding: {key} = {emb_shape}")
+            if len(emb_shape) == 2:
+                vocab_size_in_ckpt = emb_shape[0]
+                print(f"  -> Checkpoint vocabulary hajmi: {vocab_size_in_ckpt}")
+
+                # Tokenizer vocabulary hajmi bilan taqqoslash
+                tokenizer_vocab_size = len(tokenizer.characters)
+                print(f"  -> Tokenizer vocabulary hajmi: {tokenizer_vocab_size}")
+
+                if tokenizer_vocab_size != vocab_size_in_ckpt:
+                    print(f"  -> XATO: Vocabulary o'lchami mos kelmaydi!")
+                    print(f"  ->   Checkpoint: {vocab_size_in_ckpt}")
+                    print(f"  ->   Tokenizer:  {tokenizer_vocab_size}")
+                    print(f"  -> Tokenizer qo'shimcha tokenlar qo'shgan:")
+                    print(f"  ->   add_blank={config.add_blank}")
+                    print(f"  ->   use_eos_bos={config.characters.use_eos_bos if hasattr(config.characters, 'use_eos_bos') else 'N/A'}")
+                    exit(1)
+            break
+
+    # Checkpoint yuklanishi
+    model.load_state_dict(state_dict, strict=False)
+    print("  -> Checkpoint yuklandi")
 
     # 6. TEXT ENCODERNI MUZLATISH (Harflarni unutmasligi uchun)
     print("Freeze Text Encoder: ACTIVE")
