@@ -15,9 +15,10 @@ os.environ["PYTORCH_ALLOC_CONF"] = "expandable_segments:True"
 # --- SOZLAMALAR ---
 OUTPUT_PATH = "output_finetune"
 DATASET_PATH = "./my_dataset"
-MMS_CKPT = "mms_kaa/G_100000.pth"
-MMS_CONFIG = "mms_kaa/config.json"
-VOCAB_FILE = "mms_kaa/vocab.txt"
+# Hugging Face modelidan foydalanish (to'g'ri vocabulary bilan)
+MMS_CKPT = "mms_kaa_hf/pytorch_model.bin"
+MMS_CONFIG = "mms_kaa_hf/config.json"
+VOCAB_FILE = "mms_kaa_hf/vocab.txt"
 
 def train():
     # 1. Dataset konfiguratsiyasi
