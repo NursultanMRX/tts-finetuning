@@ -56,6 +56,12 @@ def train():
         missing = [c for c in karakalpak_test if c not in vocab_string]
         print(f"  -> YO'Q: {missing}")
 
+    # Vocabulary'dan tinish belgilarini ajratib olish
+    import string
+    punctuation_chars = string.punctuation + ' '
+    vocab_punctuations = ''.join([c for c in vocab_string if c in punctuation_chars])
+    print(f"  -> Tinish belgilari: '{vocab_punctuations}'")
+
     # CharactersConfig yaratish (to'g'ri format)
     characters_config = CharactersConfig(
         characters_class="TTS.tts.utils.text.characters.IPAPhonemes",
@@ -65,7 +71,7 @@ def train():
         bos="^",
         blank=None,
         characters=vocab_string,
-        punctuations="!'(),-.:;? ",
+        punctuations=vocab_punctuations,  # Faqat vocab'da mavjud tinish belgilari
         phonemes=None,
     )
 
