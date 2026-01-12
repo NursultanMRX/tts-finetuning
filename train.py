@@ -139,16 +139,27 @@ def train():
                 print(f"  -> Checkpoint vocabulary hajmi: {vocab_size_in_ckpt}")
 
                 # Tokenizer vocabulary hajmi bilan taqqoslash
-                tokenizer_vocab_size = len(tokenizer.characters)
+                # tokenizer.characters - Graphemes obyekti
+                if hasattr(tokenizer.characters, 'vocab'):
+                    tokenizer_vocab_size = len(tokenizer.characters.vocab)
+                elif hasattr(tokenizer.characters, 'num_chars'):
+                    tokenizer_vocab_size = tokenizer.characters.num_chars
+                else:
+                    tokenizer_vocab_size = len(str(tokenizer.characters))
+
                 print(f"  -> Tokenizer vocabulary hajmi: {tokenizer_vocab_size}")
+                print(f"  -> Tokenizer characters turi: {type(tokenizer.characters)}")
 
                 if tokenizer_vocab_size != vocab_size_in_ckpt:
                     print(f"  -> XATO: Vocabulary o'lchami mos kelmaydi!")
                     print(f"  ->   Checkpoint: {vocab_size_in_ckpt}")
                     print(f"  ->   Tokenizer:  {tokenizer_vocab_size}")
-                    print(f"  -> Tokenizer qo'shimcha tokenlar qo'shgan:")
-                    print(f"  ->   add_blank={config.add_blank}")
-                    print(f"  ->   use_eos_bos={config.characters.use_eos_bos if hasattr(config.characters, 'use_eos_bos') else 'N/A'}")
+                    print(f"  -> Config parametrlar:")
+                    print(f"  ->   add_blank={config.add_blank if hasattr(config, 'add_blank') else 'N/A'}")
+                    if hasattr(tokenizer.characters, 'blank'):
+                        print(f"  ->   blank token: '{tokenizer.characters.blank}'")
+                    if hasattr(tokenizer.characters, 'pad'):
+                        print(f"  ->   pad token: '{tokenizer.characters.pad}'")
                     exit(1)
             break
 
