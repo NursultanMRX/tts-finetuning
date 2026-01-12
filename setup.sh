@@ -60,6 +60,9 @@ pip install pandas librosa soundfile tqdm numpy scipy tensorboard
 # HuggingFace Hub
 pip install huggingface_hub
 
+# TorchCodec (required by torchaudio for audio loading)
+pip install torchcodec
+
 # Coqui TTS (case sensitive!)
 pip install TTS
 
@@ -69,6 +72,7 @@ echo "Verifying installations..."
 python -c "import torch; print(f'PyTorch: {torch.__version__}')"
 python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}')"
 python -c "import TTS; print(f'Coqui TTS: {TTS.__version__}')"
+python -c "import torchcodec; print('TorchCodec: OK')"
 
 # -----------------------------------------------------
 # 5. Download MMS Model from HuggingFace
