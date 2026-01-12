@@ -40,7 +40,23 @@ def train():
         mel_fmax=None
     )
 
-    # 3. ASOSIY CONFIG (sodda versiya - lug'at checkpoint dan yuklanadi)
+    # 3. Vocabulary'ni yuklash (HuggingFace vocab.txt dan)
+    print(f"Vocabulary yuklanmoqda: {VOCAB_FILE}")
+    with open(VOCAB_FILE, 'r', encoding='utf-8') as f:
+        vocab_chars = [line.strip() for line in f if line.strip()]
+
+    vocab_string = ''.join(vocab_chars)
+    print(f"  -> {len(vocab_chars)} ta harf yuklandi")
+
+    # Karakalpak harflarini tekshirish
+    karakalpak_test = ['ғ', 'қ', 'ң', 'ү', 'ҳ', 'ә', 'ө', 'ў']
+    found_chars = [c for c in karakalpak_test if c in vocab_string]
+    print(f"  -> Karakalpak harflari: {len(found_chars)}/{len(karakalpak_test)} topildi")
+    if len(found_chars) < len(karakalpak_test):
+        missing = [c for c in karakalpak_test if c not in vocab_string]
+        print(f"  -> YO'Q: {missing}")
+
+    # 4. ASOSIY CONFIG (vocabulary bilan)
     config = VitsConfig(
         audio=audio_config,
         run_name="mms_kaa_finetune",
@@ -54,6 +70,7 @@ def train():
         text_cleaner="basic_cleaners",
         use_phonemes=False,
         phoneme_language=None,
+        characters=vocab_string,  # MUHIM: Vocabulary'ni o'rnatish!
         compute_input_seq_cache=False,  # Cache'ni o'chirish (fayl yo'llari yangilandi)
         mixed_precision=True,
         output_path=OUTPUT_PATH,
