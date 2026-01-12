@@ -40,64 +40,58 @@ def train():
         mel_fmax=None
     )
 
-    # 3. Vocabulary'ni yuklash (HuggingFace vocab.txt dan)
-    print(f"Vocabulary yuklanmoqda: {VOCAB_FILE}")
-    with open(VOCAB_FILE, 'r', encoding='utf-8') as f:
-        vocab_chars = [line.strip() for line in f if line.strip()]
+    # 3. MMS Config'dan vocabulary'ni yuklash
+    import json
+    print(f"MMS Config yuklanmoqda: {MMS_CONFIG}")
+    with open(MMS_CONFIG, 'r', encoding='utf-8') as f:
+        mms_config = json.load(f)
 
-    vocab_string = ''.join(vocab_chars)
-    print(f"  -> {len(vocab_chars)} ta harf yuklandi")
+    # MMS modelining o'z vocabulary'sini olish
+    if 'vocab' in mms_config:
+        vocab_dict = mms_config['vocab']
+        # Index bo'yicha sort qilish
+        vocab_sorted = sorted(vocab_dict.items(), key=lambda x: x[1])
+        vocab_chars = [char for char, _ in vocab_sorted]
+        vocab_string = ''.join(vocab_chars)
+        print(f"  -> {len(vocab_chars)} ta harf MMS modelidan yuklandi")
 
-    # Karakalpak harflarini tekshirish
-    karakalpak_test = ['ғ', 'қ', 'ң', 'ү', 'ҳ', 'ә', 'ө', 'ў']
-    found_chars = [c for c in karakalpak_test if c in vocab_string]
-    print(f"  -> Karakalpak harflari: {len(found_chars)}/{len(karakalpak_test)} topildi")
-    if len(found_chars) < len(karakalpak_test):
-        missing = [c for c in karakalpak_test if c not in vocab_string]
-        print(f"  -> YO'Q: {missing}")
+        # Karakalpak harflarini tekshirish
+        karakalpak_test = ['ғ', 'қ', 'ң', 'ү', 'ҳ', 'ә', 'ө', 'ў']
+        found_chars = [c for c in karakalpak_test if c in vocab_string]
+        print(f"  -> Karakalpak harflari: {len(found_chars)}/{len(karakalpak_test)} topildi")
+        if len(found_chars) < len(karakalpak_test):
+            missing = [c for c in karakalpak_test if c not in vocab_string]
+            print(f"  -> YO'Q: {missing}")
+    else:
+        print("  -> OGOHLANTIRISH: Config'da 'vocab' topilmadi, default vocabulary ishlatiladi")
+        vocab_string = None
 
-    # Vocabulary'ni harflar va tinish belgilariga ajratish
-    import string
-    punctuation_chars = string.punctuation + ' '
-    vocab_punctuations = ''.join([c for c in vocab_string if c in punctuation_chars])
-    vocab_letters = ''.join([c for c in vocab_string if c not in punctuation_chars])
-    print(f"  -> Harflar: {len(vocab_letters)} ta")
-    print(f"  -> Tinish belgilari: '{vocab_punctuations}'")
+    # 4. ASOSIY CONFIG (checkpoint bilan mos vocabulary)
+    config_kwargs = {
+        'audio': audio_config,
+        'run_name': "mms_kaa_finetune",
+        'batch_size': 16,  # 25s audio uchun 3090 da 16 xavfsiz
+        'eval_batch_size': 4,
+        'batch_group_size': 0,
+        'num_loader_workers': 2,
+        'num_eval_loader_workers': 2,
+        'run_eval': True,
+        'epochs': 1000,
+        'text_cleaner': "basic_cleaners",
+        'use_phonemes': False,
+        'phoneme_language': None,
+        'compute_input_seq_cache': False,  # Cache'ni o'chirish
+        'mixed_precision': True,
+        'output_path': OUTPUT_PATH,
+        'datasets': [dataset_config],
+        'save_step': 1000,
+    }
 
-    # CharactersConfig yaratish (to'g'ri format)
-    characters_config = CharactersConfig(
-        characters_class="TTS.tts.utils.text.characters.IPAPhonemes",
-        vocab_dict=None,
-        pad="_",
-        eos="~",
-        bos="^",
-        blank=None,
-        characters=vocab_letters,  # Faqat harflar
-        punctuations=vocab_punctuations,  # Faqat tinish belgilari
-        phonemes=None,
-    )
+    # Agar vocabulary mavjud bo'lsa, qo'shamiz
+    if vocab_string:
+        config_kwargs['characters'] = vocab_string
 
-    # 4. ASOSIY CONFIG (vocabulary bilan)
-    config = VitsConfig(
-        audio=audio_config,
-        run_name="mms_kaa_finetune",
-        batch_size=16, # 25s audio uchun 3090 da 16 xavfsiz
-        eval_batch_size=4,
-        batch_group_size=0,
-        num_loader_workers=2,
-        num_eval_loader_workers=2,
-        run_eval=True,
-        epochs=1000,
-        text_cleaner="basic_cleaners",
-        use_phonemes=False,
-        phoneme_language=None,
-        characters=characters_config,  # MUHIM: CharactersConfig obyektini o'rnatish!
-        compute_input_seq_cache=False,  # Cache'ni o'chirish (fayl yo'llari yangilandi)
-        mixed_precision=True,
-        output_path=OUTPUT_PATH,
-        datasets=[dataset_config],
-        save_step=1000,
-    )
+    config = VitsConfig(**config_kwargs)
 
     # 4. Modelni yaratish
     ap = AudioProcessor.init_from_config(config)
