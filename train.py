@@ -67,9 +67,20 @@ def train():
 
     model = Vits(config, ap, tokenizer, speaker_manager=None)
 
-    # 5. MMS og'irliklarini yuklash
+    # 5. MMS og'irliklarini yuklash (HuggingFace format)
     print("MMS Checkpoint yuklanmoqda...")
-    model.load_checkpoint(config, MMS_CKPT, strict=False)
+    checkpoint = torch.load(MMS_CKPT, map_location="cpu")
+
+    # HuggingFace checkpoint format: to'g'ridan-to'g'ri state_dict
+    # TTS library format: {'model': state_dict}
+    if "model" in checkpoint:
+        # TTS format
+        model.load_state_dict(checkpoint["model"], strict=False)
+        print("  -> TTS format checkpoint yuklandi")
+    else:
+        # HuggingFace format - to'g'ridan-to'g'ri state_dict
+        model.load_state_dict(checkpoint, strict=False)
+        print("  -> HuggingFace format checkpoint yuklandi")
 
     # 6. TEXT ENCODERNI MUZLATISH (Harflarni unutmasligi uchun)
     print("Freeze Text Encoder: ACTIVE")
