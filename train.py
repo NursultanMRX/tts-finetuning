@@ -2,7 +2,7 @@ import os
 import torch
 # Trainer importi to'g'irlandi (Coqui 0.22.0 standarti)
 from trainer import Trainer, TrainerArgs
-from TTS.tts.configs.shared_configs import BaseDatasetConfig
+from TTS.tts.configs.shared_configs import BaseDatasetConfig, CharactersConfig
 from TTS.tts.configs.vits_config import VitsConfig
 from TTS.tts.models.vits import Vits
 from TTS.utils.audio import AudioProcessor
@@ -56,6 +56,19 @@ def train():
         missing = [c for c in karakalpak_test if c not in vocab_string]
         print(f"  -> YO'Q: {missing}")
 
+    # CharactersConfig yaratish (to'g'ri format)
+    characters_config = CharactersConfig(
+        characters_class="TTS.tts.utils.text.characters.IPAPhonemes",
+        vocab_dict=None,
+        pad="_",
+        eos="~",
+        bos="^",
+        blank=None,
+        characters=vocab_string,
+        punctuations="!'(),-.:;? ",
+        phonemes=None,
+    )
+
     # 4. ASOSIY CONFIG (vocabulary bilan)
     config = VitsConfig(
         audio=audio_config,
@@ -70,7 +83,7 @@ def train():
         text_cleaner="basic_cleaners",
         use_phonemes=False,
         phoneme_language=None,
-        characters=vocab_string,  # MUHIM: Vocabulary'ni o'rnatish!
+        characters=characters_config,  # MUHIM: CharactersConfig obyektini o'rnatish!
         compute_input_seq_cache=False,  # Cache'ni o'chirish (fayl yo'llari yangilandi)
         mixed_precision=True,
         output_path=OUTPUT_PATH,
