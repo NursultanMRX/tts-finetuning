@@ -87,6 +87,7 @@ def train():
         characters_config = None
 
     # 4. ASOSIY CONFIG (checkpoint bilan mos vocabulary)
+    # MUHIM: add_blank=False bo'lishi kerak, chunki MMS checkpoint blank token ishlatmagan!
     config = VitsConfig(
         audio=audio_config,
         run_name="mms_kaa_finetune",
@@ -101,6 +102,7 @@ def train():
         use_phonemes=False,
         phoneme_language=None,
         characters=characters_config,  # CharactersConfig obyekti
+        add_blank=False,  # MUHIM: MMS checkpoint blank ishlatmagan!
         compute_input_seq_cache=False,  # Cache'ni o'chirish
         mixed_precision=True,
         output_path=OUTPUT_PATH,
